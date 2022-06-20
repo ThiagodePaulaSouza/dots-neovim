@@ -8,15 +8,47 @@ Plug 'sheerun/vim-polyglot'
 Plug 'preservim/nerdtree'
 Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
 Plug 'Xuyuanp/nerdtree-git-plugin'
-Plug 'dense-analysis/ale'
-" Plug 'neoclide/coc.nvim', { 'branch' : 'release' }
 Plug 'honza/vim-snippets'
-Plug 'neoclide/coc.nvim', {'branch': 'master', 'do': 'yarn install --frozen-lockfile'}
 Plug 'jiangmiao/auto-pairs'
 Plug 'nvim-lua/plenary.nvim'
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'nvim-telescope/telescope.nvim'
+Plug 'rcarriga/nvim-notify'
+Plug 'gelguy/wilder.nvim'
 call plug#end()
 
+" eu quero complicar
+lua << EOF
+
+local wilder = require('wilder')
+wilder.setup({modes = {':'}})
+
+local gradient = {
+  '#f4468f', '#fd4a85', '#ff507a', '#ff566f', '#ff5e63',
+  '#ff6658', '#ff704e', '#ff7a45', '#ff843d', '#ff9036',
+  '#f89b31', '#efa72f', '#e6b32e', '#dcbe30', '#d2c934',
+  '#c8d43a', '#bfde43', '#b6e84e', '#aff05b'
+}
+
+for i, fg in ipairs(gradient) do
+  gradient[i] = wilder.make_hl('WilderGradient' .. i, 'Pmenu', {{a = 1}, {a = 1}, {foreground = fg}})
+end
+
+wilder.set_option('renderer', wilder.popupmenu_renderer(
+  wilder.popupmenu_border_theme({
+    highlights = {
+      gradient = gradient,
+      border = 'Normal', -- highlight to use for the border
+    },
+    border = 'rounded',
+    max_width = 30,
+    max_height = 10,
+    highlighter = wilder.highlighter_with_gradient({
+      wilder.basic_highlighter(),
+    })
+  })
+))
+EOF
 
 " Global Sets """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syntax on            " Enable syntax highlight
@@ -36,7 +68,7 @@ set colorcolumn=100  " Draws a line at the given line to keep aware of the line 
 set signcolumn=yes   " Add a column on the left. Useful for linting
 set cmdheight=2      " Give more space for displaying messages
 set updatetime=100   " Time in miliseconds to consider the changes
-set encoding=utf-8   " The encoding should be utf-8 to activate the font icons
+set encoding=utf8 " The encoding should be utf-8 to activate the font icons
 set nobackup         " No backup files
 set nowritebackup    " No backup files
 set splitright       " Create the vertical splits to the right
@@ -47,10 +79,13 @@ filetype on          " Detect and set the filetype option and trigger the FileTy
 filetype plugin on   " Load the plugin file for the file type, if any
 filetype indent on   " Load the indent file for the file type, if any
 
+
 " Theme config
 let g:tokyonight_style = "night"
 let g:tokyonight_italic_functions = 1
 let g:tokyonight_sidebars = [ "qf", "vista_kind", "terminal", "packer" ]
+
+
 
 " Change the "hint" color to the "orange" color, and make the "error" color bright red
 let g:tokyonight_colors = {
@@ -58,13 +93,13 @@ let g:tokyonight_colors = {
   \ 'error': '#ff0000'
 \ }
 
+
+
 " Load the colorscheme """"""""""""""""""""""""""""""""""
 colorscheme tokyonight
+highlight Normal guibg=NONE ctermbg=NONE
+highlight EndOfBuffer guibg=NONE ctermbg=NONE
 
-if (has("nvim")) "Transparent background. Only for nvim
-    highlight Normal guibg=NONE ctermbg=NONE
-    highlight EndOfBuffer guibg=NONE ctermbg=NONE
-endif
 
 
 " AirLine """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -75,31 +110,40 @@ let g:airline#extensions#tabline#enabled = 1
 let g:airline_theme = 'sonokai'
 
 
+
 " Remaps """"""""""
 " Adding an empty line below, above and below with insert
 nmap op o<Esc>k
 nmap oi O<Esc>j
 nmap oo A<CR>
 
+
+
 " Create a tab
 nmap te :tabe<CR>
+
+
 
 " Navigate between buffers
 nmap ty :bn<CR>
 nmap tr :bp<CR>
 
+
+
 " Delete a buffer
 nmap td :bd<CR>
+
+
 
 " Create splits
 nmap th :split<CR>
 nmap tv :vsplit<CR>
 
+
+
 " Close splits and others
 nmap tt :q<CR>
 
-" autocmd """"""""""
-" autocmds aqui
 
 
 " Nerd Tree """""""""""""""""
@@ -110,21 +154,38 @@ map <C-k> <C-w>k
 map <C-l> <C-w>l
 
 
-" ALE """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:ale_linters = {
-\}
 
-let g:ale_fixers = {
-\   '*': ['trim_whitespace'],
-\}
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? coc#_select_confirm() :
+      \ coc#expandableOrJumpable() ? "\<C-r>=coc#rpc#request('doKeymap', ['snippets-expand-jump',''])\<CR>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ coc#refresh()
 
-let g:ale_fix_on_save = 1
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
 
 
 
+" Telescope
+nnoremap <Space><Space> <cmd>Telescope find_files<cr>
+nnoremap <Space>g <cmd>Telescope live_grep<cr>
+nnoremap <Space>b <cmd>Telescope buffers<cr>
+nnoremap <Space>h <cmd>Telescope help_tags<cr>
 
-" COC
-let g:coc_global_extensions = [ 'coc-snippets', 'coc-explorer']
+
+
+" remap func
+function! HighlightWordUnderCursor()
+    if getline(".")[col(".")-1] !~# '[[:punct:][:blank:]]'
+        exec 'match' 'Search' '/\V\<'.expand('<cword>').'\>/'
+    else
+        match none
+    endif
+endfunction
+
+autocmd! CursorHold,CursorHoldI * call HighlightWordUnderCursor()
 
 
 
@@ -353,6 +414,8 @@ nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
 " Resume latest coc list.
 nnoremap <silent><nowait> <space>p  :<C-u>CocListResume<CR>
 
+
+
 " Coc Snippets """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " Use <C-l> for trigger snippet expand.
@@ -387,19 +450,55 @@ endfunction
 let g:coc_snippet_next = '<tab>'
 
 
-" Telescope
-nnoremap <Space><Space> <cmd>Telescope find_files<cr>
-nnoremap <Space>g <cmd>Telescope live_grep<cr>
-nnoremap <Space>b <cmd>Telescope buffers<cr>
-nnoremap <Space>h <cmd>Telescope help_tags<cr>
 
-" remap func
-function! HighlightWordUnderCursor()
-    if getline(".")[col(".")-1] !~# '[[:punct:][:blank:]]'
-        exec 'match' 'Search' '/\V\<'.expand('<cword>').'\>/'
-    else
-        match none
-    endif
-endfunction
+" NOTIFY
+lua << EOF
+-- copy-paste from README.md
 
-autocmd! CursorHold,CursorHoldI * call HighlightWordUnderCursor()
+local status_ok, notify = pcall(require, "notify")
+if not status_ok then
+vim.notify("notify module not found!")
+return
+end
+
+vim.notify = notify
+
+require("notify").setup({
+active = true,
+on_config_done = nil,
+-- Animation style (see below for details)
+stages = "fade",
+-- Function called when a new window is opened, use for changing win settings/config
+on_open = nil,
+-- Function called when a window is closed
+on_close = nil,
+-- Render function for notifications. See notify-render()
+render = "default",
+-- Default timeout for notifications
+timeout = 5000,
+-- Max number of columns for messages
+max_width = nil,
+-- Max number of lines for a message
+max_height = nil,
+-- For stages that change opacity this is treated as the highlight behind the window
+-- Set this to either a highlight group, an RGB hex value e.g. "#000000" or a function returning an RGB code for dynamic values
+background_colour ="#282A36",
+-- Minimum width for notification windows
+minimum_width = 50,
+-- Icons for the different levels
+icons = {
+ERROR = "🔴👺 ERROR",
+WARN = "🟡🚧 WARN",
+INFO = "🟢🍀 INFO",
+DEBUG = "⚫🧪 DEBUG",
+TRACE = "✎ TRACE",
+},
+})
+
+
+
+EOF
+
+
+
+
