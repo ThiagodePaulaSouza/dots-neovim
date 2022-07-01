@@ -13,47 +13,23 @@ Plug 'jiangmiao/auto-pairs'
 Plug 'nvim-lua/plenary.nvim'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'nvim-telescope/telescope.nvim'
-Plug 'rcarriga/nvim-notify'
 Plug 'gelguy/wilder.nvim'
+Plug 'airblade/vim-gitgutter'
+Plug 'akinsho/toggleterm.nvim', {'tag' : 'v1.*'}
+
 call plug#end()
 
-" eu quero complicar
-lua << EOF
 
-local wilder = require('wilder')
-wilder.setup({modes = {':'}})
-
-local gradient = {
-  '#f4468f', '#fd4a85', '#ff507a', '#ff566f', '#ff5e63',
-  '#ff6658', '#ff704e', '#ff7a45', '#ff843d', '#ff9036',
-  '#f89b31', '#efa72f', '#e6b32e', '#dcbe30', '#d2c934',
-  '#c8d43a', '#bfde43', '#b6e84e', '#aff05b'
-}
-
-for i, fg in ipairs(gradient) do
-  gradient[i] = wilder.make_hl('WilderGradient' .. i, 'Pmenu', {{a = 1}, {a = 1}, {foreground = fg}})
-end
-
-wilder.set_option('renderer', wilder.popupmenu_renderer(
-  wilder.popupmenu_border_theme({
-    highlights = {
-      gradient = gradient,
-      border = 'Normal', -- highlight to use for the border
-    },
-    border = 'rounded',
-    max_width = 30,
-    max_height = 10,
-    highlighter = wilder.highlighter_with_gradient({
-      wilder.basic_highlighter(),
-    })
-  })
-))
-EOF
 
 " Global Sets """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syntax on            " Enable syntax highlight
 set nu               " Enable line numbers
 set tabstop=4        " Show existing tab with 4 spaces width
+let &shell = has('win32') ? 'powershell' : 'pwsh'
+let &shellcmdflag = '-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command [Console]::InputEncoding=[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;'
+let &shellredir = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+let &shellpipe = '2>&1 | Out-File -Encoding UTF8 %s; exit $LastExitCode'
+set shellquote= shellxquote=
 set softtabstop=4    " Show existing tab with 4 spaces width
 set shiftwidth=4     " When indenting with '>', use 4 spaces width
 set expandtab        " On pressing tab, insert 4 spaces
@@ -64,8 +40,8 @@ set incsearch        " Incremental search
 set ignorecase       " Ingore case in search
 set smartcase        " Consider case if there is a upper case character
 set scrolloff=8      " Minimum number of lines to keep above and below the cursor
-set colorcolumn=100  " Draws a line at the given line to keep aware of the line size
-set signcolumn=yes   " Add a column on the left. Useful for linting
+" set colorcolumn=100  " Draws a line at the given line to keep aware of the line size
+set signcolumn=auto   " Add a column on the left. Useful for linting
 set cmdheight=2      " Give more space for displaying messages
 set updatetime=100   " Time in miliseconds to consider the changes
 set encoding=utf8 " The encoding should be utf-8 to activate the font icons
@@ -78,6 +54,7 @@ set mouse=a          " Enable mouse support
 filetype on          " Detect and set the filetype option and trigger the FileType Event
 filetype plugin on   " Load the plugin file for the file type, if any
 filetype indent on   " Load the indent file for the file type, if any
+
 
 
 " Theme config
@@ -142,7 +119,7 @@ nmap tv :vsplit<CR>
 
 
 " Close splits and others
-nmap tt :q<CR>
+nmap tk :q<CR>
 
 
 
@@ -242,9 +219,10 @@ nnoremap <space>ef :CocCommand explorer --preset floating<CR>
 nnoremap <space>ec :CocCommand explorer --preset cocConfig<CR>
 nnoremap <space>eb :CocCommand explorer --preset buffer<CR>
 
+
+
 " List all presets
 nnoremap <space>el :CocList explPresets
-
 
 
 
@@ -253,10 +231,6 @@ nnoremap <space>el :CocList explPresets
 
 " TextEdit might fail if hidden is not set.
 set hidden
-
-" Some servers have issues with backup files, see #649.
-set nobackup
-set nowritebackup
 
 " Give more space for displaying messages.
 set cmdheight=2
@@ -267,15 +241,6 @@ set updatetime=300
 
 " Don't pass messages to |ins-completion-menu|.
 set shortmess+=c
-
-" Always show the signcolumn, otherwise it would shift the text each time
-" diagnostics appear/become resolved.
-if has("nvim-0.5.0") || has("patch-8.1.1564")
-  " Recently vim can merge signcolumn and number column into one
-  set signcolumn=number
-else
-  set signcolumn=yes
-endif
 
 " Use tab for trigger completion with characters ahead and navigate.
 " NOTE: Use command ':verbose imap <tab>' to make sure tab is not mapped by
@@ -461,7 +426,7 @@ vim.notify("notify module not found!")
 return
 end
 
-vim.notify = notify
+vim.notify = require("notify")
 
 require("notify").setup({
 active = true,
@@ -494,11 +459,119 @@ DEBUG = "⚫🧪 DEBUG",
 TRACE = "✎ TRACE",
 },
 })
-
-
-
 EOF
 
 
 
+" Wilder -> Better :
 
+lua << EOF
+local wilder = require('wilder')
+wilder.setup({modes = {':'}})
+
+local gradient = {
+  '#f4468f', '#fd4a85', '#ff507a', '#ff566f', '#ff5e63',
+  '#ff6658', '#ff704e', '#ff7a45', '#ff843d', '#ff9036',
+  '#f89b31', '#efa72f', '#e6b32e', '#dcbe30', '#d2c934',
+  '#c8d43a', '#bfde43', '#b6e84e', '#aff05b'
+}
+
+for i, fg in ipairs(gradient) do
+  gradient[i] = wilder.make_hl('WilderGradient' .. i, 'Pmenu', {{a = 1}, {a = 1}, {foreground = fg}})
+end
+
+wilder.set_option('renderer', wilder.popupmenu_renderer(
+  wilder.popupmenu_border_theme({
+    highlights = {
+      gradient = gradient,
+      border = 'Normal', -- highlight to use for the border
+    },
+    border = 'rounded',
+    max_width = 30,
+    max_height = 10,
+    highlighter = wilder.highlighter_with_gradient({
+      wilder.basic_highlighter(),
+    })
+  })
+))
+EOF
+
+
+
+" GitGutter
+function! GitStatus()
+  let [a,m,r] = GitGutterGetHunkSummary()
+  return printf('+%d ~%d -%d', a, m, r)
+endfunction
+set statusline+=%{GitStatus()}
+
+
+
+" ToggleTerm 
+lua << EOF
+local status_ok, toggleterm = pcall(require, "toggleterm")
+if not status_ok then
+	return
+end
+
+toggleterm.setup({
+	size = 20,
+	open_mapping = [[<A-t>]],
+	hide_numbers = true,
+	shade_filetypes = {},
+	shade_terminals = true,
+	shading_factor = 2,
+	start_in_insert = true,
+	insert_mappings = true,
+	persist_size = true,
+	direction = "float",
+	close_on_exit = true,
+	shell = vim.o.shell,
+	float_opts = {
+		border = "curved",
+		winblend = 0,
+		highlights = {
+			border = "Normal",
+			background = "Normal",
+		},
+	},
+})
+
+function _G.set_terminal_keymaps()
+  local opts = {noremap = true}
+  -- vim.api.nvim_buf_set_keymap(0, 't', '<esc>', [[<C-\><C-n>]], opts)
+  vim.api.nvim_buf_set_keymap(0, 't', 'jk', [[<C-\><C-n>]], opts)
+  -- vim.api.nvim_buf_set_keymap(0, 't', '<C-h>', [[<C-\><C-n><C-W>h]], opts)
+  vim.api.nvim_buf_set_keymap(0, 't', '<C-j>', [[<C-\><C-n><C-W>j]], opts)
+  vim.api.nvim_buf_set_keymap(0, 't', '<C-k>', [[<C-\><C-n><C-W>k]], opts)
+  -- vim.api.nvim_buf_set_keymap(0, 't', '<C-l>', [[<C-\><C-n><C-W>l]], opts)
+end
+
+vim.cmd('autocmd! TermOpen term://* lua set_terminal_keymaps()')
+
+local Terminal = require("toggleterm.terminal").Terminal
+
+local node = Terminal:new({ cmd = "node", hidden = true })
+
+function _NODE_TOGGLE()
+	node:toggle()
+end
+
+local ncdu = Terminal:new({ cmd = "ncdu", hidden = true })
+
+function _NCDU_TOGGLE()
+	ncdu:toggle()
+end
+
+local htop = Terminal:new({ cmd = "htop", hidden = true })
+
+function _HTOP_TOGGLE()
+	htop:toggle()
+end
+
+local python = Terminal:new({ cmd = "python", hidden = true })
+
+function _PYTHON_TOGGLE()
+	python:toggle()
+end
+EOF
