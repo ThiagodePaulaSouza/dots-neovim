@@ -1,4 +1,4 @@
-# dots-Neovim
+# dots-neovim
 my init.vim
 
 theme: tokyonight dark
